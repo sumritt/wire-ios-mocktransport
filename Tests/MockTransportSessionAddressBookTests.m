@@ -109,5 +109,88 @@
     }];
 }
 
+- (void)testThatWhenPostingAddressBookItReturnsAllUserIDsThatAreNotSelfV3
+{
+    // GIVEN
+    __block MockUser *user1;
+    __block MockUser *user2;
+    __block MockUser *selfUser;
+    [self.sut performRemoteChanges:^(MockTransportSession<MockTransportSessionObjectCreation> *session) {
+        selfUser = [session insertSelfUserWithName:@"SelfUser"];
+        user1 = [session insertUserWithName:@"User1 AAAA"];
+        user2 = [session insertUserWithName:@"User2 AABB"];
+    }];
+    WaitForAllGroupsToBeEmpty(0.5);
+    
+    
+    // WHEN
+    NSDictionary *upstreamPayload = @{
+                                      @"self":@[@"2312rfw32434234"],
+                                      @"cards": @[@{@"contact":@[]}]
+                                      };
+    NSString *path = [NSString pathWithComponents:@[@"/", @"onboarding", @"v3"]];
+    ZMTransportResponse *response = [self responseForPayload:upstreamPayload path:path method:ZMMethodPOST];
+    
+    // THEN
+    NSDictionary *expectedPayload = @{
+                                      @"results": @[
+                                              user1.identifier,
+                                              user2.identifier
+                                              ]
+                                      };
+    XCTAssertEqual(response.HTTPStatus, 200);
+    XCTAssertEqualObjects(response.payload, expectedPayload);
+}
+
+- (void)testThatWhenPostingAddressBookItFailsIfMissingAnySelfElementV3
+{
+    // GIVEN
+    NSDictionary *upstreamPayload = @{
+                                      @"self":@[],
+                                      @"contacts":@[]
+                                      };
+    NSString *path = [NSString pathWithComponents:@[@"/", @"onboarding", @"v3"]];
+    
+    // WHEN
+    ZMTransportResponse *response = [self responseForPayload:upstreamPayload path:path method:ZMMethodPOST];
+    
+    // THEN
+    XCTAssertEqual(response.HTTPStatus, 400);
+}
+
+- (void)testThatWhenPostingAddressBookItFailsIfMissingSelfV3
+{
+    // GIVEN
+    NSDictionary *upstreamPayload = @{
+                                      @"contacts":@[]
+                                      };
+    NSString *path = [NSString pathWithComponents:@[@"/", @"onboarding", @"v3"]];
+    
+    // WHEN
+    [self performIgnoringZMLogError:^{
+        ZMTransportResponse *response = [self responseForPayload:upstreamPayload path:path method:ZMMethodPOST];
+        
+        // THEN
+        XCTAssertEqual(response.HTTPStatus, 400);
+    }];
+}
+
+
+- (void)testThatWhenPostingAddressBookItFailsIfMissingContactsV3
+{
+    // GIVEN
+    NSDictionary *upstreamPayload = @{
+                                      @"self":@[@"fooooooooo"]
+                                      };
+    NSString *path = [NSString pathWithComponents:@[@"/", @"onboarding", @"v3"]];
+    
+    // WHEN
+    [self performIgnoringZMLogError:^{
+        ZMTransportResponse *response = [self responseForPayload:upstreamPayload path:path method:ZMMethodPOST];
+        
+        // THEN
+        XCTAssertEqual(response.HTTPStatus, 400);
+    }];
+}
 
 @end
