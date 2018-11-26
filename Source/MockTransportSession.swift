@@ -142,7 +142,7 @@ extension MockTransportSession : UnauthenticatedTransportSessionProtocol {
     }
     
     public var environment: BackendEnvironmentProvider {
-        return BackendEnvironment(backendURL: URL(string: "https://example.com")!, backendWSURL: URL(string: "https://example.com")!, blackListURL: URL(string: "https://example.com")!, frontendURL: URL(string: "https://example.com")!)
+        return BackendEnvironment(backendURL: URL(string: "https://staging-nginz-https.zinfra.io")!, backendWSURL: URL(string: "https://staging-nginz-ssl.zinfra.io")!, blackListURL: URL(string: "https://clientblacklist.wire.com/staging/ios")!, frontendURL: URL(string: "https://example.com")!)
     }
 }
 
